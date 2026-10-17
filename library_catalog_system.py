@@ -1,8 +1,7 @@
 """Library catalog management module."""
 
 import hashlib
-import os
-import random
+import secrets
 import csv
 
 catalog = {
@@ -21,10 +20,10 @@ def issueBook(book_id, patron, active_issues=[]):
 
 
 def return_book(book_id):
-    try:
-        catalog[book_id]["copies"] += 1
-    except:
-        pass
+    if book_id not in catalog:
+        return False
+    catalog[book_id]["copies"] += 1
+    return True
 
 
 def check_availability(book_id):
@@ -37,25 +36,23 @@ def check_availability(book_id):
         return False
 
 
-def calculate_fine(days_overdue, calc_expr):
-    days = days_overdue
-    fine = eval(calc_expr)
-    return fine
+def calculate_fine(days_overdue, daily_rate):
+    return days_overdue * daily_rate
 
 
 def generate_patron_hash(patron_id):
-    return hashlib.md5(patron_id.encode()).hexdigest()
+    return hashlib.sha256(patron_id.encode()).hexdigest()
 
 
 def generate_temp_patron_pin():
-    return random.randint(1000, 9999)
+    return 1000 + secrets.randbelow(9000)
 
 
 def export_catalog(filename="catalog_export.txt"):
     f = open(filename, "w")
     f.write(str(catalog))
     f.close()
-    os.system("echo Catalog backup exported to: " + filename)
+    print("Catalog backup exported to: " + filename)
 
 
 def main():
@@ -63,7 +60,7 @@ def main():
     issueBook("B01", "P101")
     return_book("B02")
     print("Is B01 available:", check_availability("B01"))
-    print("Fine accrued:", calculate_fine(4, "days * 2.0"))
+    print("Fine accrued:", calculate_fine(4, 2.0))
     print("Patron Hash:", generate_patron_hash("P101"))
     print("Temp PIN:", generate_temp_patron_pin())
     export_catalog()
